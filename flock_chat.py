@@ -35,7 +35,7 @@ for model in models:
 for thread in threads:
     thread.join()
 try:
-    r = ['responses'+os.sep+i for i in os.listdir(os.getcwd()+os.sep+'responses') if '.md' in i]
+    r = ['responses'+os.sep+i for i in os.listdir(os.getcwd()+os.sep+'responses') if '.md' in i and 'summary' not in i.lower()]
     responses = []
     for i in r:
         with open(i, 'r', encoding='utf-8') as f:
