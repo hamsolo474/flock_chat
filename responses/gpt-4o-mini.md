@@ -1,8 +1,8 @@
-The error message you're encountering indicates that the variable `@table_name_col` is not recognized in the context where you're trying to use it. This typically happens when the variable is not declared in the correct scope or if there is a syntax issue.
+The error message you're encountering indicates that the variable `@table_name_col` is not recognized in the context where you're trying to use it. This is likely due to the scope of the variable within the cursor loop. 
 
-In your code, the declaration of `@table_name_col` is correct, but the issue arises because the variable is being used inside a dynamic SQL string (`@sql`) without being properly concatenated. When you build the SQL string, the variable `@table_name_col` is not recognized inside the string because it is treated as a literal string rather than a variable.
+In SQL Server, when you declare a variable, it is only available in the batch or scope where it is declared. In your case, the variable `@table_name_col` is declared outside the cursor loop, but it is being used inside the dynamic SQL string that is being built.
 
-To fix this, you need to ensure that the variable is concatenated correctly into the dynamic SQL string. Here’s the corrected version of your code:
+To fix this issue, you need to ensure that the variable is properly referenced within the dynamic SQL. You can achieve this by using `sp_executesql` to execute the dynamic SQL and passing the variable as a parameter. Here's how you can modify your code:
 
 ```sql
 DECLARE @sql NVARCHAR(MAX) = '';
@@ -23,7 +23,7 @@ BEGIN
             MAX(CASE WHEN VBLE_MODIFICADA LIKE ''%CPU%'' THEN VALOR_VBLE ELSE NULL END) AS CPU_VALUES,
             MAX(CASE WHEN VBLE_MODIFICADA LIKE ''%Memory%'' THEN VALOR_VBLE ELSE NULL END) AS MEMORY_VALUES,
             MAX(CASE WHEN VBLE_MODIFICADA LIKE ''%DiskUtilization%'' THEN VALOR_VBLE ELSE NULL END) AS STORAGE_VALUES,
-            MAX(CASE WHEN VBLE_MODIFICADA = ''STATE'' THEN VALOR_VBLE ELSE NULL END) AS AVALIABILTY
+            MAX(CASE WHEN VBLE_MODIFICADA LIKE ''STATE'' THEN VALOR_VBLE ELSE NULL END) AS AVALIABILTY
         FROM WM7HIST.dbo.' + QUOTENAME(@table_name_col) + '
         GROUP BY IDENTIF, FECHA, VBLE_MODIFICADA, VALOR_VBLE, FECHA_INSERT;';
 
@@ -37,14 +37,10 @@ EXEC sp_executesql @sql;
 ```
 
 ### Key Changes:
-1. **Corrected the condition for `AVALIABILTY`:** Changed `LIKE 'STATE'` to `= 'STATE'` since you are checking for an exact match.
-2. **Ensure proper concatenation:** The variable `@table_name_col` is concatenated correctly into the dynamic SQL string using `QUOTENAME` to prevent SQL injection and handle special characters.
+1. **Dynamic SQL Execution**: The `EXEC sp_executesql @sql;` is called after the cursor loop, which is correct. However, ensure that the SQL string is built correctly.
+2. **Variable Scope**: The variable `@table_name_col` is correctly used within the cursor loop, and its value is concatenated into the `@sql` string.
 
-### Additional Note:
-Make sure that the final SQL string in `@sql` is valid and does not contain any syntax errors before executing it. You can print the `@sql` variable before executing it to debug if needed:
-
-```sql
-PRINT @sql; -- This will help you see the final SQL statement being executed.
-``` 
-
-This should resolve the error you are encountering.
+### Additional Considerations:
+- Ensure that the dynamic SQL string is valid and does not contain any syntax errors.
+- If you have a large number of tables, consider the potential size of the `@sql` variable and whether it might exceed the maximum length for NVARCHAR(MAX).
+- If you need to debug, you can print the `@sql` variable before executing it to see the generated SQL statements.

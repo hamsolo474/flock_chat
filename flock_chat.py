@@ -42,7 +42,7 @@ try:
             responses.append(f.read())
 
 
-    prompt = "Please summarise the following responses for me\n"
+    prompt = "Please summarise the following responses for me and provide examples\n"
     subprompt = "Response {index} {model}:\n{i}\n\n"
 
     for i, j in enumerate(responses):
